@@ -15,8 +15,9 @@
             margin: 0;
             padding: 20px;
             box-sizing: border-box;
-            background-image: url(./thierry-meier-CBgeH8kWoAI-unsplash.jpg);
-            
+            background-image: url(./thierry-meier-CBgeH8kWoAI-unsplash.jpg); /* Asegúrate de que esta imagen exista o remueve la línea */
+            background-size: cover;
+            background-position: center;
         }
 
         .container {
@@ -27,7 +28,7 @@
             width: 100%;
             max-width: 600px;
             text-align: center;
-            opacity: 80%;
+            opacity: 0.95; /* Aumenta un poco la opacidad para mejor lectura */
             
         }
 
@@ -96,13 +97,30 @@
 
         .resultado-item strong {
             color: #333;
-            width: 120px;
+            width: 120px; /* Ancho fijo para las etiquetas fuertes */
             display: inline-block;
         }
 
         .no-results {
             color: #6c757d;
             font-style: italic;
+        }
+
+        /* Nuevo estilo para el botón de reportar */
+        .report-button {
+            background-color: #dc3545; /* Rojo para el botón de reportar */
+            margin-top: 15px;
+            margin-bottom: 20px; /* Espacio extra debajo del botón de reportar */
+        }
+
+        .report-button:hover {
+            background-color: #c82333;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-weight: bold;
+            text-align: center;
         }
     </style>
 </head>
@@ -136,6 +154,9 @@
                 e.preventDefault();
                 const idDispenserConsulta = document.getElementById('id-dispenser-consulta').value;
 
+                // Limpiar resultados anteriores y mostrar mensaje de carga
+                resultadosContent.innerHTML = '<p>Buscando información...</p>';
+
                 const data = {
                     sheet: 'ConsultaDispenser',
                     idDispenserConsulta: idDispenserConsulta
@@ -159,7 +180,7 @@
 
                 } catch (error) {
                     console.error('Error al consultar datos:', error);
-                    resultadosContent.innerHTML = '<p class="error-message">Error al buscar los datos del dispenser.</p>';
+                    resultadosContent.innerHTML = '<p class="error-message">Error al buscar los datos del dispenser. Intente de nuevo.</p>';
                 }
             });
 
@@ -179,16 +200,47 @@
 
                     // Formatear la fecha
                     const date = new Date(item[0]);
-                    const formattedDate = date.toLocaleString();
+                    const formattedDate = date.toLocaleString('es-AR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
 
-                    div.innerHTML += `<p><strong>${headers[0]}:</strong> ${formattedDate}</p>`;
-                    div.innerHTML += `<p><strong>${headers[1]}:</strong> ${item[1]}</p>`;
-                    div.innerHTML += `<p><strong>${headers[2]}:</strong> ${item[2]}</p>`;
-                    div.innerHTML += `<p><strong>${headers[3]}:</strong> ${item[3]}</p>`;
-                    div.innerHTML += `<p><strong>${headers[4]}:</strong> ${item[4]}</p>`;
-                    div.innerHTML += `<p><strong>${headers[5]}:</strong> ${item[5]}</p>`;
-                    div.innerHTML += `<p><strong>${headers[6]}:</strong> ${item[6]}</p>`;
+                    let resultHtml = '';
+                    resultHtml += `<p><strong>${headers[0]}:</strong> ${formattedDate}</p>`;
+                    resultHtml += `<p><strong>${headers[1]}:</strong> ${item[1]}</p>`;
+                    resultHtml += `<p><strong>${headers[2]}:</strong> ${item[2]}</p>`;
+                    resultHtml += `<p><strong>${headers[3]}:</strong> ${item[3]}</p>`;
+                    resultHtml += `<p><strong>${headers[4]}:</strong> ${item[4]}</p>`;
+                    resultHtml += `<p><strong>${headers[5]}:</strong> ${item[5]}</p>`;
+                    resultHtml += `<p><strong>${headers[6]}:</strong> ${item[6]}</p>`;
+                    
+                    div.innerHTML = resultHtml;
                     resultadosContent.appendChild(div);
+
+                    // Agregar el botón "Reportar un Problema" para cada item de resultado
+                    const reportButton = document.createElement('button');
+                    reportButton.textContent = 'Reportar un Problema';
+                    reportButton.classList.add('report-button');
+                    reportButton.onclick = () => {
+                        const subject = encodeURIComponent(`Problema con Dispenser ID: ${item[2]} - Cliente: ${item[1]}`);
+                        const body = encodeURIComponent(
+                            `Buenos días, \n\nSe reporta un problema con el siguiente dispenser:\n\n` +
+                            `Fecha/Hora del último servicio: ${formattedDate}\n` +
+                            `Cliente: ${item[1] || 'N/A'}\n` + // Añadir N/A si el campo está vacío
+                            `ID Dispenser: ${item[2] || 'N/A'}\n` +
+                            `Lugar: ${item[3] || 'N/A'}\n` +
+                            `Sector: ${item[4] || 'N/A'}\n` +
+                            `Técnico: ${item[5] || 'N/A'}\n` +
+                            `Observaciones del último servicio: ${item[6] || 'N/A'}\n\n` +
+                            `Por favor, describa el problema aquí:`
+                        );
+                        window.location.href = `mailto:LOGISTICA@SURAGUA.COM.AR?subject=${subject}&body=${body}`;
+                    };
+                    resultadosContent.appendChild(reportButton);
                 });
             }
         });
